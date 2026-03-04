@@ -2,8 +2,6 @@
 import React from "react";
 import Image from "next/image";
 import {
-  ChevronLeft,
-  ChevronRight,
   LayoutGrid,
   PiggyBank,
   ReceiptText,
@@ -13,7 +11,7 @@ import { UserButton } from "@clerk/nextjs";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
 
-function SideNav({ isCollapsed, onToggle }) {
+function SideNav({ isCollapsed }) {
   const menuList = [
     {
       id: 1,
@@ -58,21 +56,6 @@ function SideNav({ isCollapsed, onToggle }) {
             </div>
           ) : null}
         </Link>
-        <button
-          type="button"
-          onClick={onToggle}
-          className={`hidden rounded-xl border border-slate-200 bg-white p-2 text-slate-600 transition hover:border-primary/30 hover:text-primary md:inline-flex ${
-            isCollapsed ? "absolute -right-4 top-6" : ""
-          }`}
-          aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
-          title={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
-        >
-          {isCollapsed ? (
-            <ChevronRight className="h-4 w-4" />
-          ) : (
-            <ChevronLeft className="h-4 w-4" />
-          )}
-        </button>
       </div>
       
       <div className="mt-8 flex w-full flex-1 flex-col">

@@ -3,11 +3,7 @@ import React from 'react'
 
 function DashboardHeader() {
   return (
-    <div className='sticky top-0 z-40 flex items-center justify-between border-b bg-white/95 p-5 shadow-sm backdrop-blur-sm'>
-        <div>
-          <p className='text-sm font-medium text-slate-500'>Dashboard</p>
-          <h2 className='text-lg font-semibold text-slate-900'>Budget Overview</h2>
-        </div>
+    <div className='sticky top-0 z-40 flex justify-end border-b bg-white/95 px-5 py-3 shadow-sm backdrop-blur-sm'>
         <div>
             <UserButton/>
         </div>
