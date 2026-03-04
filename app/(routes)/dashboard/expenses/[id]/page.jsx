@@ -1,7 +1,8 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { Trash } from "lucide-react";
+import Link from "next/link";
+import { ChevronRight, PencilLine } from "lucide-react";
 import { toast } from "sonner";
 import { useParams, useRouter } from "next/navigation";
 
@@ -9,40 +10,50 @@ import BudgetItem from "./BudgetItem.jsx";
 import AddExpenses from "../_components/AddExpenses.jsx";
 import EditBudget from "../_components/EditBudget.jsx";
 import ExpensesListTable from "../_components/ExpensesListTable.jsx";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "../../../../../components/ui/alert-dialog.jsx";
+import DeleteBudgetAction from "../../budgets/_components/DeleteBudgetAction.jsx";
 import { Button } from "../../../../../components/ui/button.jsx";
 import { apiRequest } from "../../../../../lib/api.js";
+
+async function loadBudgetData({
+  budgetId,
+  route,
+  setBudgetsInfo,
+  setExpensesList,
+  setLoading,
+}) {
+  try {
+    setLoading(true);
+    const data = await apiRequest(`/api/budgets/${budgetId}`, {
+      cache: "no-store",
+    });
+
+    setBudgetsInfo(data?.budget || null);
+    setExpensesList(data?.expenses || []);
+  } catch (error) {
+    console.error("Error fetching budget info:", error);
+    toast.error(error.message || "Failed to load budget");
+    route.replace("/dashboard/budgets");
+  } finally {
+    setLoading(false);
+  }
+}
 
 function ExpensesScreen() {
   const params = useParams();
   const budgetId = params?.id;
   const [budgetInfo, setBudgetsInfo] = useState(null);
   const [expensesList, setExpensesList] = useState([]);
+  const [loading, setLoading] = useState(true);
   const route = useRouter();
 
   const getBudgetInfo = async () => {
-    try {
-      const data = await apiRequest(`/api/budgets/${budgetId}`, {
-        cache: "no-store",
-      });
-
-      setBudgetsInfo(data?.budget || null);
-      setExpensesList(data?.expenses || []);
-    } catch (error) {
-      console.error("Error fetching budget info:", error);
-      toast.error(error.message || "Failed to load budget");
-      route.replace("/dashboard/budgets");
-    }
+    await loadBudgetData({
+      budgetId,
+      route,
+      setBudgetsInfo,
+      setExpensesList,
+      setLoading,
+    });
   };
 
   useEffect(() => {
@@ -50,93 +61,82 @@ function ExpensesScreen() {
       return;
     }
 
-    let cancelled = false;
-
-    const loadBudgetInfo = async () => {
-      try {
-        const data = await apiRequest(`/api/budgets/${budgetId}`, {
-          cache: "no-store",
-        });
-
-        if (cancelled) {
-          return;
-        }
-
-        setBudgetsInfo(data?.budget || null);
-        setExpensesList(data?.expenses || []);
-      } catch (error) {
-        console.error("Error fetching budget info:", error);
-        toast.error(error.message || "Failed to load budget");
-        route.replace("/dashboard/budgets");
-      }
-    };
-
-    void loadBudgetInfo();
-
-    return () => {
-      cancelled = true;
-    };
+    void loadBudgetData({
+      budgetId,
+      route,
+      setBudgetsInfo,
+      setExpensesList,
+      setLoading,
+    });
   }, [budgetId, route]);
 
-  const deleteBudget = async () => {
-    try {
-      await apiRequest(`/api/budgets/${budgetId}`, {
-        method: "DELETE",
-      });
-
-      toast("Budget deleted successfully");
-      route.replace("/dashboard/budgets");
-    } catch (error) {
-      console.error("Error deleting budget:", error);
-      toast.error(error.message || "Failed to delete budget");
-    }
-  };
-
   return (
-    <div className="p-10">
-      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-        <h2 className="text-2xl font-bold">My Expenses</h2>
-        <div className="flex gap-2">
-          <EditBudget budgetId={budgetId} refreshData={getBudgetInfo} />
+    <div className="bg-background p-5 md:p-8">
+      <div className="mx-auto max-w-7xl space-y-8">
+        <section className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+          <div>
+            <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
+              <Link href="/dashboard" className="transition hover:text-foreground">
+                Dashboard
+              </Link>
+              <ChevronRight className="h-4 w-4" />
+              <Link href="/dashboard/budgets" className="transition hover:text-foreground">
+                Budgets
+              </Link>
+              {budgetInfo ? (
+                <>
+                  <ChevronRight className="h-4 w-4" />
+                  <span className="text-foreground">{budgetInfo.name}</span>
+                </>
+              ) : null}
+            </div>
 
-          <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <Button className="flex gap-2" variant="destructive">
-                <Trash />
-                Delete
-              </Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-                <AlertDialogDescription>
-                  This action cannot be undone. This will permanently delete your current budget along with its expenses.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction onClick={deleteBudget}>Continue</AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
-        </div>
-      </div>
+            <h1 className="mt-3 text-3xl font-semibold tracking-tight text-foreground md:text-4xl">
+              {budgetInfo ? `${budgetInfo.name} ${budgetInfo.icon || ""}`.trim() : "Budget Details"}
+            </h1>
+            <p className="mt-2 text-sm text-muted-foreground md:text-base">
+              Track and manage expenses for this budget.
+            </p>
+          </div>
 
-      <div className="grid grid-cols-1 gap-4 mt-6 md:grid-cols-2">
-        {budgetInfo ? (
-          <BudgetItem budget={budgetInfo} />
-        ) : (
-          <div className="h-[150px] w-full bg-slate-200 rounded-lg animate-pulse" />
-        )}
+          <div className="flex flex-wrap gap-3">
+            <EditBudget
+              budgetId={budgetId}
+              refreshData={getBudgetInfo}
+              trigger={
+                <Button variant="outline" className="gap-2 rounded-xl">
+                  <PencilLine className="h-4 w-4" />
+                  Edit Budget
+                </Button>
+              }
+            />
+            <DeleteBudgetAction
+              budgetId={budgetId}
+              onDeleted={() => route.replace("/dashboard/budgets")}
+            />
+          </div>
+        </section>
 
-        <AddExpenses budgetId={budgetId} refreshData={getBudgetInfo} />
-      </div>
+        <section>
+          {loading ? (
+            <div className="h-[240px] overflow-hidden rounded-[28px] border border-border bg-card shadow-sm">
+              <div className="h-full animate-pulse bg-muted" />
+            </div>
+          ) : budgetInfo ? (
+            <BudgetItem budget={budgetInfo} />
+          ) : null}
+        </section>
 
-      <div className="mt-6">
-        <ExpensesListTable
-          expensesList={expensesList}
-          refreshData={getBudgetInfo}
-        />
+        <section>
+          <AddExpenses budgetId={budgetId} refreshData={getBudgetInfo} />
+        </section>
+
+        <section>
+          <ExpensesListTable
+            expensesList={expensesList}
+            refreshData={getBudgetInfo}
+          />
+        </section>
       </div>
     </div>
   );
