@@ -10,6 +10,83 @@ function getExpenseId(params) {
   return Number.isInteger(expenseId) && expenseId > 0 ? expenseId : null;
 }
 
+function getExpenseAmount(value) {
+  const amount = Number(value);
+  return Number.isFinite(amount) && amount > 0 ? amount : null;
+}
+
+function getBudgetId(value) {
+  const budgetId = Number(value);
+  return Number.isInteger(budgetId) && budgetId > 0 ? budgetId : null;
+}
+
+async function getOwnedExpense(email, expenseId) {
+  const [expense] = await db
+    .select({
+      id: Expense.id,
+      budgetId: Expense.budgetId,
+    })
+    .from(Expense)
+    .innerJoin(Budget, eq(Budget.id, Expense.budgetId))
+    .where(and(eq(Expense.id, expenseId), eq(Budget.createdBy, email)));
+
+  return expense ?? null;
+}
+
+export async function PATCH(request, context) {
+  const email = await getAuthenticatedUserEmail();
+
+  if (!email) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const params = await Promise.resolve(context.params);
+  const expenseId = getExpenseId(params);
+
+  if (!expenseId) {
+    return NextResponse.json({ error: "Invalid expense id" }, { status: 400 });
+  }
+
+  const { name, amount, budgetId } = await request.json();
+  const trimmedName = name?.trim();
+  const parsedAmount = getExpenseAmount(amount);
+  const parsedBudgetId = getBudgetId(budgetId);
+
+  if (!trimmedName || !parsedAmount || !parsedBudgetId) {
+    return NextResponse.json(
+      { error: "Expense name, amount, and budget are required" },
+      { status: 400 }
+    );
+  }
+
+  const ownedExpense = await getOwnedExpense(email, expenseId);
+
+  if (!ownedExpense) {
+    return NextResponse.json({ error: "Expense not found" }, { status: 404 });
+  }
+
+  const [budget] = await db
+    .select({ id: Budget.id })
+    .from(Budget)
+    .where(and(eq(Budget.id, parsedBudgetId), eq(Budget.createdBy, email)));
+
+  if (!budget) {
+    return NextResponse.json({ error: "Budget not found" }, { status: 404 });
+  }
+
+  const [expense] = await db
+    .update(Expense)
+    .set({
+      description: trimmedName,
+      amount: parsedAmount,
+      budgetId: parsedBudgetId,
+    })
+    .where(eq(Expense.id, expenseId))
+    .returning();
+
+  return NextResponse.json({ expense });
+}
+
 export async function DELETE(_request, context) {
   const email = await getAuthenticatedUserEmail();
 
@@ -24,11 +101,7 @@ export async function DELETE(_request, context) {
     return NextResponse.json({ error: "Invalid expense id" }, { status: 400 });
   }
 
-  const [expense] = await db
-    .select({ id: Expense.id })
-    .from(Expense)
-    .innerJoin(Budget, eq(Budget.id, Expense.budgetId))
-    .where(and(eq(Expense.id, expenseId), eq(Budget.createdBy, email)));
+  const expense = await getOwnedExpense(email, expenseId);
 
   if (!expense) {
     return NextResponse.json({ error: "Expense not found" }, { status: 404 });

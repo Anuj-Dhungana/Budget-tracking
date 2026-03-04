@@ -3,10 +3,10 @@
 import React from "react";
 import Image from "next/image";
 import {
+  BarChart3,
   LayoutGrid,
   PiggyBank,
   ReceiptText,
-  ShieldCheck,
 } from "lucide-react";
 import { UserButton } from "@clerk/nextjs";
 import { usePathname } from "next/navigation";
@@ -36,9 +36,9 @@ function SideNav({ isCollapsed, className, onNavigate }) {
     },
     {
       id: 4,
-      name: "Upgrade",
-      icon: ShieldCheck,
-      path: "/dashboard/upgrade",
+      name: "Analytics",
+      icon: BarChart3,
+      path: "/dashboard/analytics",
     },
   ];
   const path = usePathname();
