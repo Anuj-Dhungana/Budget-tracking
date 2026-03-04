@@ -1,4 +1,4 @@
-"use client"
+"use client";
 import React from "react";
 import Image from "next/image";
 import {
@@ -11,43 +11,53 @@ import { UserButton } from "@clerk/nextjs";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
 
-function SideNav({ isCollapsed }) {
+import { cn } from "../../../../lib/utils";
+
+function SideNav({ isCollapsed, className, onNavigate }) {
   const menuList = [
     {
       id: 1,
       name: "Dashboard",
       icon: LayoutGrid,
-      path:"/dashboard"
+      path: "/dashboard",
     },
     {
       id: 2,
       name: "Budgets",
       icon: PiggyBank,
-      path:"/dashboard/budgets"
+      path: "/dashboard/budgets",
     },
     {
       id: 3,
       name: "Expenses",
       icon: ReceiptText,
-      path:"/dashboard/expenses"
+      path: "/dashboard/expenses",
     },
     {
       id: 4,
       name: "Upgrade",
       icon: ShieldCheck,
-      path:"/dashboard/upgrade"
+      path: "/dashboard/upgrade",
     },
-  ]
-    const path=usePathname();
+  ];
+  const path = usePathname();
 
   return (
     <div
-      className={`flex h-screen flex-col border-r border-slate-200 bg-white px-4 py-5 shadow-sm transition-all duration-300 ${
-        isCollapsed ? "items-center" : ""
-      }`}
+      className={cn(
+        "flex h-screen flex-col border-r border-slate-200 bg-white px-4 py-5 shadow-sm transition-all duration-300",
+        isCollapsed ? "items-center" : "",
+        className
+      )}
     >
-      <div className={`flex w-full items-center ${isCollapsed ? "justify-center" : "justify-between"}`}>
-        <Link href="/" className={`flex items-center ${isCollapsed ? "justify-center" : "gap-3"}`}>
+      <div
+        className={`flex w-full items-center ${isCollapsed ? "justify-center" : "justify-between"}`}
+      >
+        <Link
+          href="/"
+          onClick={onNavigate}
+          className={`flex items-center ${isCollapsed ? "justify-center" : "gap-3"}`}
+        >
           <Image src={"/logo.svg"} alt="logo" width={40} height={40} />
           {!isCollapsed ? (
             <div>
@@ -60,16 +70,16 @@ function SideNav({ isCollapsed }) {
       
       <div className="mt-8 flex w-full flex-1 flex-col">
         {menuList.map((menu) => (
-          <Link href={menu.path} key={menu.id} >
-          <div
-            className={`mb-2 flex items-center rounded-2xl px-4 py-3 text-sm font-medium text-slate-500 transition hover:bg-primary/10 hover:text-primary ${
-              path==menu.path ? "bg-primary/10 text-primary" : ""
-            } ${isCollapsed ? "justify-center" : "gap-3"}`}
-            title={isCollapsed ? menu.name : undefined}
-          >
-            <menu.icon className="h-5 w-5 shrink-0" />
-            {!isCollapsed ? <span>{menu.name}</span> : null}
-          </div>
+          <Link href={menu.path} key={menu.id} onClick={onNavigate}>
+            <div
+              className={`mb-2 flex items-center rounded-2xl px-4 py-3 text-sm font-medium text-slate-500 transition hover:bg-primary/10 hover:text-primary ${
+                path == menu.path ? "bg-primary/10 text-primary" : ""
+              } ${isCollapsed ? "justify-center" : "gap-3"}`}
+              title={isCollapsed ? menu.name : undefined}
+            >
+              <menu.icon className="h-5 w-5 shrink-0" />
+              {!isCollapsed ? <span>{menu.name}</span> : null}
+            </div>
           </Link>
         ))}
       </div>
@@ -78,8 +88,9 @@ function SideNav({ isCollapsed }) {
         className={`mt-auto flex w-full items-center rounded-2xl border border-slate-200 bg-slate-50 p-3 ${
           isCollapsed ? "justify-center" : "gap-3"
         }`}
-      > 
-        <UserButton/>
+        title={isCollapsed ? "Profile" : undefined}
+      >
+        <UserButton />
         {!isCollapsed ? (
           <div>
             <p className="text-sm font-medium text-slate-900">Profile</p>

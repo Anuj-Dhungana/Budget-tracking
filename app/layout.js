@@ -30,6 +30,7 @@ export default function RootLayout({ children }) {
           <link rel="icon" href="/logo.svg" />
         </head>
         <body
+          suppressHydrationWarning
           className={`${geistSans.variable} ${geistMono.variable} antialiased`}
         >
           <Toaster />
