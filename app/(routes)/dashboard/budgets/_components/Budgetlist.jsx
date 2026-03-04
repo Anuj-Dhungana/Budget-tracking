@@ -24,8 +24,30 @@ function Budgetlist() {
   }
 
   useEffect(() => {
-    if (user) {
-      void getBudgetList()
+    if (!user) {
+      return;
+    }
+
+    let cancelled = false
+
+    const loadBudgetList = async () => {
+      try {
+        const data = await apiRequest('/api/budgets', {
+          cache: 'no-store',
+        })
+
+        if (!cancelled) {
+          setBudgetList(data?.budgets || [])
+        }
+      } catch (error) {
+        console.error('Error fetching budgets:', error)
+      }
+    }
+
+    void loadBudgetList()
+
+    return () => {
+      cancelled = true
     }
   }, [user])
 

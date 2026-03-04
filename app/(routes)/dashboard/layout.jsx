@@ -12,24 +12,32 @@ function Dashboardlayout({ children }) {
   const { user } = useUser();
   const router = useRouter();
 
-  const checkUserBudgets = async () => {
-    try {
-      const data = await apiRequest("/api/budgets", {
-        cache: "no-store",
-      });
-
-      if ((data?.budgets || []).length === 0) {
-        router.replace("/dashboard/budgets");
-      }
-    } catch (error) {
-      console.error("Error checking budgets:", error);
-    }
-  };
-
   useEffect(() => {
-    if (user) {
-      void checkUserBudgets();
+    if (!user) {
+      return;
     }
+
+    let cancelled = false;
+
+    const checkUserBudgets = async () => {
+      try {
+        const data = await apiRequest("/api/budgets", {
+          cache: "no-store",
+        });
+
+        if (!cancelled && (data?.budgets || []).length === 0) {
+          router.replace("/dashboard/budgets");
+        }
+      } catch (error) {
+        console.error("Error checking budgets:", error);
+      }
+    };
+
+    void checkUserBudgets();
+
+    return () => {
+      cancelled = true;
+    };
   }, [user, router]);
 
   return (

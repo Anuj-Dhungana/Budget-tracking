@@ -24,12 +24,6 @@ function Dashboard() {
   const [budgetList, setBudgetList] = useState([]);
   const [expensesList, setExpensesList] = useState([]);
 
-  useEffect(() => {
-    if (user) {
-      void getDashboardData();
-    }
-  }, [user]);
-
   const getDashboardData = async () => {
     try {
       const data = await apiRequest("/api/dashboard", {
@@ -42,6 +36,37 @@ function Dashboard() {
       console.error("Error fetching dashboard data:", error);
     }
   };
+
+  useEffect(() => {
+    if (!user) {
+      return;
+    }
+
+    let cancelled = false;
+
+    const loadDashboardData = async () => {
+      try {
+        const data = await apiRequest("/api/dashboard", {
+          cache: "no-store",
+        });
+
+        if (cancelled) {
+          return;
+        }
+
+        setBudgetList(data?.budgets || []);
+        setExpensesList(data?.expenses || []);
+      } catch (error) {
+        console.error("Error fetching dashboard data:", error);
+      }
+    };
+
+    void loadDashboardData();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [user]);
 
   return (
     <div className='p-8'>

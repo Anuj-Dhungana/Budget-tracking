@@ -30,12 +30,6 @@ function ExpensesScreen() {
   const [expensesList, setExpensesList] = useState([]);
   const route = useRouter();
 
-  useEffect(() => {
-    if (budgetId) {
-      void getBudgetInfo();
-    }
-  }, [budgetId]);
-
   const getBudgetInfo = async () => {
     try {
       const data = await apiRequest(`/api/budgets/${budgetId}`, {
@@ -50,6 +44,39 @@ function ExpensesScreen() {
       route.replace("/dashboard/budgets");
     }
   };
+
+  useEffect(() => {
+    if (!budgetId) {
+      return;
+    }
+
+    let cancelled = false;
+
+    const loadBudgetInfo = async () => {
+      try {
+        const data = await apiRequest(`/api/budgets/${budgetId}`, {
+          cache: "no-store",
+        });
+
+        if (cancelled) {
+          return;
+        }
+
+        setBudgetsInfo(data?.budget || null);
+        setExpensesList(data?.expenses || []);
+      } catch (error) {
+        console.error("Error fetching budget info:", error);
+        toast.error(error.message || "Failed to load budget");
+        route.replace("/dashboard/budgets");
+      }
+    };
+
+    void loadBudgetInfo();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [budgetId, route]);
 
   const deleteBudget = async () => {
     try {
