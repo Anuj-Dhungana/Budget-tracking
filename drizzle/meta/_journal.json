@@ -8,6 +8,13 @@
       "when": 1742667195952,
       "tag": "0000_free_squirrel_girl",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1772623250071,
+      "tag": "0001_early_paper_doll",
+      "breakpoints": true
     }
   ]
 }

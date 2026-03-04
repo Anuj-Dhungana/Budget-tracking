@@ -4,7 +4,14 @@ import dotenv from 'dotenv';
 // Load environment variables
 dotenv.config({ path: '.env.local' });
 
-const sql = neon(process.env.NEXT_PUBLIC_DATABASE_URL);
+const connectionString =
+  process.env.DATABASE_URL || process.env.NEXT_PUBLIC_DATABASE_URL;
+
+if (!connectionString) {
+  throw new Error('Database connection string is not configured');
+}
+
+const sql = neon(connectionString);
 
 async function runMigration() {
   try {

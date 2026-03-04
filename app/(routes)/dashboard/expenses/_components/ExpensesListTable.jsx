@@ -1,37 +1,36 @@
-import { Trash } from 'lucide-react'
+"use client";
+
 import React from 'react'
-import db from '../../../../../utils/dbConfig.js'
-import { Expense } from '../../../../../utils/schema.js'
-import { eq } from 'drizzle-orm'
+import { Trash } from 'lucide-react'
 import { toast } from 'sonner'
 
-function ExpensesListTable({expensesList, refreshData}) {
+import { apiRequest } from '../../../../../lib/api.js'
 
-    const deleteExpense = async (expense) => {
-      try {
-        const result = await db
-          .delete(Expense)
-          .where(eq(Expense.id, expense.id))
-          .returning({deleted: Expense.id});
+function ExpensesListTable({ expensesList, refreshData }) {
+  const deleteExpense = async (expense) => {
+    try {
+      await apiRequest(`/api/expenses/${expense.id}`, {
+        method: 'DELETE',
+      });
 
-        if (result && result.length > 0) {
-          toast("Expense Deleted");
-          if (typeof refreshData === 'function') {
-            refreshData();
-          }
-        }
-      } catch (error) {
-        console.error("Error deleting expense:", error);
-        toast.error("Failed to delete expense");
+      toast("Expense deleted");
+      if (typeof refreshData === 'function') {
+        refreshData();
       }
+    } catch (error) {
+      console.error("Error deleting expense:", error);
+      toast.error(error.message || "Failed to delete expense");
     }
-  // Function to format date
+  }
+
   const formatDate = (dateString) => {
     if (!dateString) return "";
+
     try {
       const date = new Date(dateString);
-      // Check if date is valid
-      if (isNaN(date.getTime())) return "Invalid date";
+
+      if (Number.isNaN(date.getTime())) return "Invalid date";
+
       return date.toLocaleDateString('en-US', {
         year: 'numeric',
         month: 'short',
@@ -53,15 +52,15 @@ function ExpensesListTable({expensesList, refreshData}) {
         <h2 className='font-bold text-center'>Action</h2>
       </div>
       {expensesList && expensesList.length > 0 ? (
-        expensesList.map((expense,index)=>(
-          <div key={index} className='grid grid-cols-4 bg-slate-50 p-2'>
+        expensesList.map((expense) => (
+          <div key={expense.id} className='grid grid-cols-4 bg-slate-50 p-2'>
             <h2>{expense.description}</h2>
-            <h2>₹{expense.amount}</h2>
+            <h2>Rs {expense.amount}</h2>
             <h2>{formatDate(expense.createdAt)}</h2>
             <h2 className="text-center">
-              <button 
+              <button
                 className="text-red-600 hover:text-red-800"
-                onClick={()=>deleteExpense(expense)}
+                onClick={() => deleteExpense(expense)}
               >
                 <Trash className="h-5 w-5 cursor-pointer inline-block" />
               </button>

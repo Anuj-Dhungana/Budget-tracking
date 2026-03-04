@@ -1,36 +1,40 @@
 "use client";
+
 import React, { useEffect } from "react";
-import SideNav from "./_components/SideNav";
-import DashboardHeader from "./_components/DashboardHeader";
-import db from "../../../utils/dbConfig.js";
-import { Budget } from "../../../utils/schema.js";
 import { useUser } from "@clerk/nextjs";
-import { eq } from "drizzle-orm";
 import { useRouter } from "next/navigation";
+
+import { apiRequest } from "../../../lib/api.js";
+import DashboardHeader from "./_components/DashboardHeader";
+import SideNav from "./_components/SideNav";
 
 function Dashboardlayout({ children }) {
   const { user } = useUser();
   const router = useRouter();
 
   const checkUserBudgets = async () => {
-    const result = await db
-      .select()
-      .from(Budget)
-      .where(eq(Budget.createdBy, user?.primaryEmailAddress?.emailAddress));
+    try {
+      const data = await apiRequest("/api/budgets", {
+        cache: "no-store",
+      });
 
-    console.log(result);
-    if (result?.length === 0) {
-      router.replace("/dashboard/budgets");
+      if ((data?.budgets || []).length === 0) {
+        router.replace("/dashboard/budgets");
+      }
+    } catch (error) {
+      console.error("Error checking budgets:", error);
     }
   };
 
   useEffect(() => {
-    user && checkUserBudgets();
-  }, [user]);
+    if (user) {
+      void checkUserBudgets();
+    }
+  }, [user, router]);
 
   return (
     <div>
-      <div className="fixed md:w-64 hidden md:block">
+      <div className="fixed hidden md:block md:w-64">
         <SideNav />
       </div>
       <div className="md:ml-64">

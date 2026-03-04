@@ -1,104 +1,67 @@
 'use client'
-import React, { useState, useEffect } from 'react'
+
+import React, { useEffect, useState } from 'react'
 import { useUser } from "@clerk/nextjs";
-import db from "../../../utils/dbConfig.js";
-import { Budget, Expense } from "../../../utils/schema.js";
-import { getTableColumns, eq, desc, sql } from "drizzle-orm";
-import Cardinfo from "./_components/Cardinfo";
+
+import { apiRequest } from "../../../lib/api.js";
 import BarChartDashboard from "./_components/BarChartDashboard";
+import Cardinfo from "./_components/Cardinfo";
 import BudgetItem from "./budgets/_components/BudgetItem";
 import ExpensesListTable from './expenses/_components/ExpensesListTable.jsx';
 
-// Client component for user greeting
 const ClientGreeting = () => {
   const { user } = useUser();
-  const [name, setName] = useState('');
+  const name =
+    user?.firstName ||
+    user?.primaryEmailAddress?.emailAddress?.split("@")[0] ||
+    "there";
 
-  useEffect(() => {
-    if (user) {
-      setName(user.firstName || user.primaryEmailAddress?.emailAddress?.split('@')[0] || 'there');
-    }
-  }, [user]);
-
-  return <span>{name || 'there'}</span>;
+  return <span>{name}</span>;
 };
 
 function Dashboard() {
   const { user } = useUser();
   const [budgetList, setBudgetList] = useState([]);
   const [expensesList, setExpensesList] = useState([]);
-  
+
   useEffect(() => {
     if (user) {
-      console.log("User object properties:", Object.keys(user));
-      console.log("User email:", user.primaryEmailAddress?.emailAddress);
-      getBudgetList();
-      getAllExpenses();
+      void getDashboardData();
     }
   }, [user]);
 
-  const getBudgetList = async () => {
+  const getDashboardData = async () => {
     try {
-      const result = await db.select({
-        ...getTableColumns(Budget),
-        totalSpend: sql`COALESCE(sum(${Expense.amount}), 0)`.mapWith(Number),
-        totalItems: sql`count(${Expense.id})`.mapWith(Number),
-      })
-      .from(Budget)
-      .leftJoin(Expense, eq(Budget.id, Expense.budgetId))
-      .where(eq(Budget.createdBy, user?.primaryEmailAddress?.emailAddress))
-      .groupBy(Budget.id)
-      .orderBy(desc(Budget.id));
+      const data = await apiRequest("/api/dashboard", {
+        cache: "no-store",
+      });
 
-      setBudgetList(result);
+      setBudgetList(data?.budgets || []);
+      setExpensesList(data?.expenses || []);
     } catch (error) {
-      console.error("Error fetching budget data:", error);
+      console.error("Error fetching dashboard data:", error);
     }
-  }
-
-  const getAllExpenses = async () => {
-    try {
-      const result = await db.select({
-        id: Expense.id,
-        description: Expense.description,
-        amount: Expense.amount,
-        createdAt: Expense.createdAt,
-        budgetId: Expense.budgetId
-      })
-      .from(Expense)
-      .innerJoin(Budget, eq(Budget.id, Expense.budgetId))
-      .where(eq(Budget.createdBy, user?.primaryEmailAddress?.emailAddress))
-      .orderBy(desc(Expense.id))
-      .limit(10); // Limit to 10 recent expenses
-
-      setExpensesList(result);
-    } catch (error) {
-      console.error("Error fetching expense data:", error);
-    }
-  }
+  };
 
   return (
     <div className='p-8'>
-      <h2 className='font-bold text-3xl'> Hi, <ClientGreeting /></h2>
-      <p className='text-gray-500'>Here's what happing with your money, Lets Manage your expense</p>
+      <h2 className='font-bold text-3xl'>Hi, <ClientGreeting /></h2>
+      <p className='text-gray-500'>Here&apos;s what is happening with your money. Manage your expenses clearly.</p>
 
-      <Cardinfo budgetList={budgetList}/>
+      <Cardinfo budgetList={budgetList} />
 
-      <div className='grid grid-cols-1 md:grid-cols-3 mt-6 gap-6'>
+      <div className='grid grid-cols-1 gap-6 mt-6 md:grid-cols-3'>
         <div className='md:col-span-2'>
-          <BarChartDashboard
-            budgetList={budgetList}
-          />
-
+          <BarChartDashboard budgetList={budgetList} />
           <ExpensesListTable
             expensesList={expensesList}
-            refreshData={getAllExpenses}
+            refreshData={getDashboardData}
           />
         </div>
         <div className='grid gap-6'>
-          <h2 className='text-2xl font-bold'>Recent Expenses</h2>
-          {budgetList.map((budget,index)=>(
-            <BudgetItem budget={budget} key={index} />
+          <h2 className='text-2xl font-bold'>Recent Budgets</h2>
+          {budgetList.map((budget) => (
+            <BudgetItem budget={budget} key={budget.id} />
           ))}
         </div>
       </div>

@@ -1,7 +1,4 @@
 import { neon } from '@neondatabase/serverless';
-import { drizzle } from 'drizzle-orm/neon-http';
-import { migrate } from 'drizzle-orm/postgres-js/migrator';
-import * as schema from './utils/schema.jsx';
 import { readFile } from 'fs/promises';
 import { join } from 'path';
 import dotenv from 'dotenv';
@@ -9,8 +6,14 @@ import dotenv from 'dotenv';
 // Load environment variables
 dotenv.config({ path: '.env.local' });
 
-const sql = neon(process.env.DATABASE_URL);
-const db = drizzle({ client: sql }, { schema });
+const connectionString =
+  process.env.DATABASE_URL || process.env.NEXT_PUBLIC_DATABASE_URL;
+
+if (!connectionString) {
+  throw new Error('Database connection string is not configured');
+}
+
+const sql = neon(connectionString);
 
 async function runMigration() {
   try {

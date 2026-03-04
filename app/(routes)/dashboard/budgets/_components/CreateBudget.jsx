@@ -1,52 +1,60 @@
 "use client";
+
 import React, { useState } from "react";
+import EmojiPicker from "emoji-picker-react";
+import { toast } from "sonner";
+
+import { Button } from "../../../../../components/ui/button";
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
 } from "../../../../../components/ui/dialog";
-import EmojiPicker from "emoji-picker-react";
-import { Button } from "../../../../../components/ui/button";
 import { Input } from "../../../../../components/ui/input";
-import { toast } from "sonner";
-import db from "../../../../../utils/dbConfig";
-import { Budget } from "../../../../../utils/schema";
-import { useUser } from "@clerk/nextjs";
-import { DialogClose, DialogFooter } from "../../../../../components/ui/dialog";
-function CreateBudget({ refershData}) {
-  const { user } = useUser();
-  const [emojiicon, setEmojiicon] = useState("😃");
-  const [openEmojiPicker, setOpenEmojiPicker] = useState(false);
+import { apiRequest } from "../../../../../lib/api.js";
 
-  const [name, setName] = useState('');
-  const [amount, setAmount] = useState('');
+function CreateBudget({ refershData }) {
+  const [emojiicon, setEmojiicon] = useState("💰");
+  const [openEmojiPicker, setOpenEmojiPicker] = useState(false);
+  const [open, setOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [name, setName] = useState("");
+  const [amount, setAmount] = useState("");
 
   const onCreateBudget = async () => {
-    const result = await db
-      .insert(Budget)
-      .values({
-        name: name,
-        amount: amount,
-        createdBy: user?.primaryEmailAddress?.emailAddress,
-        icon: emojiicon,
-      })
-      .returning({ insertId: Budget.id });
-    if (result) {
-      refershData()
-      toast.success("Budget Created Successfully");
+    try {
+      setLoading(true);
+      await apiRequest("/api/budgets", {
+        method: "POST",
+        body: {
+          name,
+          amount,
+          icon: emojiicon,
+        },
+      });
+
+      setName("");
+      setAmount("");
+      setEmojiicon("💰");
+      setOpen(false);
+      refershData();
+      toast.success("Budget created successfully");
+    } catch (error) {
+      toast.error(error.message || "Failed to create budget");
+    } finally {
+      setLoading(false);
     }
   };
+
   return (
     <div>
-      <Dialog>
+      <Dialog open={open} onOpenChange={setOpen}>
         <DialogTrigger asChild>
           <div
-            className="bg-slate-100 p-10 rounded-md 
-            items-center flex flex-col border-2 border-dashed 
-            cursor-pointer hover:shadow-md"
+            className="bg-slate-100 p-10 rounded-md items-center flex flex-col border-2 border-dashed cursor-pointer hover:shadow-md"
           >
             <h2 className="text-3xl font-bold">+</h2>
             <h2 className="text-2xl font-bold">Create New Budget</h2>
@@ -67,8 +75,8 @@ function CreateBudget({ refershData}) {
               <div className="absolute z-20">
                 {openEmojiPicker && (
                   <EmojiPicker
-                    onEmojiClick={(e) => {
-                      setEmojiicon(e.emoji);
+                    onEmojiClick={(event) => {
+                      setEmojiicon(event.emoji);
                       setOpenEmojiPicker(false);
                     }}
                   />
@@ -78,6 +86,7 @@ function CreateBudget({ refershData}) {
                 <h2 className="text-black font-medium my-2">Budget Name</h2>
                 <Input
                   placeholder="Budget Name"
+                  value={name}
                   onChange={(e) => setName(e.target.value)}
                 />
               </div>
@@ -85,22 +94,21 @@ function CreateBudget({ refershData}) {
                 <h2 className="text-black font-medium my-2">Budget Amount</h2>
                 <Input
                   type="number"
-                  placeholder="e.g RS 5000"
+                  placeholder="e.g. Rs 5000"
+                  value={amount}
                   onChange={(e) => setAmount(Number(e.target.value))}
                 />
               </div>
             </div>
           </DialogHeader>
           <DialogFooter className="sm:justify-start">
-            <DialogClose asChild>
-              <Button
-                disabled={!(name && amount)}
-                onClick={() => onCreateBudget()}
-                className="mt-5 w-full"
-              >
-                Create Budget
-              </Button>
-            </DialogClose>
+            <Button
+              disabled={!(name && amount) || loading}
+              onClick={onCreateBudget}
+              className="mt-5 w-full"
+            >
+              {loading ? "Creating..." : "Create Budget"}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

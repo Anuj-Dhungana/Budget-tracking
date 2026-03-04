@@ -1,18 +1,14 @@
 "use client";
-import React, { useEffect, useState, use } from "react";
-import db from "../../../../../utils/dbConfig.js";
-import { Budget } from "../../../../../utils/schema";
-import { useUser } from "@clerk/nextjs";
-import { getTableColumns } from "drizzle-orm";
-import { sql } from "drizzle-orm";
-import { eq, desc } from "drizzle-orm";
-import { Expense } from "../../../../../utils/schema";
+
+import React, { useEffect, useState } from "react";
+import { Trash } from "lucide-react";
+import { toast } from "sonner";
+import { useParams, useRouter } from "next/navigation";
+
 import BudgetItem from "./BudgetItem.jsx";
 import AddExpenses from "../_components/AddExpenses.jsx";
-import ExpensesListTable from "../_components/ExpensesListTable.jsx";
 import EditBudget from "../_components/EditBudget.jsx";
-import { Button } from "../../../../../components/ui/button.jsx";
-import { PenBox, Trash } from "lucide-react";
+import ExpensesListTable from "../_components/ExpensesListTable.jsx";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -23,133 +19,100 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from "../../../../../@/components/ui/alert-dialog.jsx";
-import { toast } from "sonner";
-import { useRouter } from "next/navigation";
+} from "../../../../../components/ui/alert-dialog.jsx";
+import { Button } from "../../../../../components/ui/button.jsx";
+import { apiRequest } from "../../../../../lib/api.js";
 
-
-function ExpensesScreen({ params }) {
-  // Unwrap params using React.use()
-  const unwrappedParams = use(params);
-  const { user } = useUser();
+function ExpensesScreen() {
+  const params = useParams();
+  const budgetId = params?.id;
   const [budgetInfo, setBudgetsInfo] = useState(null);
   const [expensesList, setExpensesList] = useState([]);
   const route = useRouter();
+
   useEffect(() => {
-    user && getBudgetInfo();
-  }, [user]);
+    if (budgetId) {
+      void getBudgetInfo();
+    }
+  }, [budgetId]);
 
   const getBudgetInfo = async () => {
-    const result = await db
-      .select({
-        ...getTableColumns(Budget),
-        totalSpend: sql`sum(${Expense.amount})`.mapWith(Number),
-        totalItems: sql`count(${Expense.id})`.mapWith(Number),
-      })
-      .from(Budget)
-      .leftJoin(Expense, eq(Budget.id, Expense.budgetId))
-      .where(eq(Budget.createdBy, user?.primaryEmailAddress?.emailAddress))
-      .where(eq(Budget.id, unwrappedParams.id))
-      .groupBy(Budget.id);
-
-    setBudgetsInfo(result[0]);
-    getExpensesList();
-  };
-
-  const getExpensesList = async () => {
     try {
-      const result = await db
-        .select({
-          id: Expense.id,
-          amount: Expense.amount,
-          description: Expense.description,
-          budgetId: Expense.budgetId,
-          createdAt: Expense.createdAt
-        })
-        .from(Expense)
-        .where(eq(Expense.budgetId, unwrappedParams.id))
-        .orderBy(desc(Expense.createdAt));
-      
-      setExpensesList(result);
+      const data = await apiRequest(`/api/budgets/${budgetId}`, {
+        cache: "no-store",
+      });
+
+      setBudgetsInfo(data?.budget || null);
+      setExpensesList(data?.expenses || []);
     } catch (error) {
-      console.error("Error fetching expenses list:", error);
-      toast.error("Failed to load expenses");
+      console.error("Error fetching budget info:", error);
+      toast.error(error.message || "Failed to load budget");
+      route.replace("/dashboard/budgets");
     }
   };
 
   const deleteBudget = async () => {
+    try {
+      await apiRequest(`/api/budgets/${budgetId}`, {
+        method: "DELETE",
+      });
 
-    const deleteExpenses = await db
-    .delete(Expense)
-    .where(eq(Expense.budgetId, unwrappedParams.id))
-    .returning();
-    if (deleteExpenses) {
-        const result = await db
-        .delete(Budget)
-        .where(eq(Budget.id, unwrappedParams.id))
-        .returning();
-       
+      toast("Budget deleted successfully");
+      route.replace("/dashboard/budgets");
+    } catch (error) {
+      console.error("Error deleting budget:", error);
+      toast.error(error.message || "Failed to delete budget");
     }
-    toast("Budget deleted successfully");
-    route.replace("/dashboard/budgets");
-
- 
   };
+
   return (
     <div className="p-10">
-      <h2 className="text-2xl font-bold flex justify-between">
-        My Expenses
-       <div  className="flex gap-2">
-       <EditBudget budgetId={unwrappedParams.id} refreshData={() => getBudgetInfo()}/>
-       </div>
-       
-        <AlertDialog>
-          <AlertDialogTrigger asChild>
-            <Button className="flex gap-2" variant="destructive">
-              <Trash />
-              Delete
-            </Button>
-          </AlertDialogTrigger>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-              <AlertDialogDescription>
-                This action cannot be undone. This will permanently delete your
-                delete your current budget along with expenses and remove your data from our servers.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>Cancel</AlertDialogCancel>
-              <AlertDialogAction onClick={()=>deleteBudget()}>Continue</AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
-       
-      </h2>
-      <div className="grid grid-cols-1 md:grid-cols-2 ,mt-6">
+      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+        <h2 className="text-2xl font-bold">My Expenses</h2>
+        <div className="flex gap-2">
+          <EditBudget budgetId={budgetId} refreshData={getBudgetInfo} />
+
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button className="flex gap-2" variant="destructive">
+                <Trash />
+                Delete
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  This action cannot be undone. This will permanently delete your current budget along with its expenses.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={deleteBudget}>Continue</AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 gap-4 mt-6 md:grid-cols-2">
         {budgetInfo ? (
           <BudgetItem budget={budgetInfo} />
         ) : (
-          <div
-            className="h-[150px] w-full bg-slate-200
-                rounded-lg animate-pulse"
-          ></div>
+          <div className="h-[150px] w-full bg-slate-200 rounded-lg animate-pulse" />
         )}
 
-        <AddExpenses
-          budgetId={unwrappedParams.id}
-          user={user}
-          refreshData={() => getBudgetInfo()}
-        />
+        <AddExpenses budgetId={budgetId} refreshData={getBudgetInfo} />
       </div>
+
       <div className="mt-6">
-       
         <ExpensesListTable
           expensesList={expensesList}
-          refreshData={() => getBudgetInfo()}
+          refreshData={getBudgetInfo}
         />
       </div>
     </div>
   );
 }
+
 export default ExpensesScreen;
