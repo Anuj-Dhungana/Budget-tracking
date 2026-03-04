@@ -1,26 +1,27 @@
 "use client";
 
-import React, { useState } from 'react'
-import EmojiPicker from "emoji-picker-react"
-import { PenBox } from "lucide-react"
-import { toast } from "sonner"
+import React, { useState } from "react";
+import EmojiPicker from "emoji-picker-react";
+import { PenBox } from "lucide-react";
+import { toast } from "sonner";
 
-import { Button } from "../../../../../components/ui/button"
+import { Button } from "../../../../../components/ui/button";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "../../../../../components/ui/dialog"
-import { Input } from "../../../../../components/ui/input"
-import { apiRequest } from "../../../../../lib/api.js"
+} from "../../../../../components/ui/dialog";
+import { Input } from "../../../../../components/ui/input";
+import { apiRequest } from "../../../../../lib/api.js";
 
-function EditBudget({ budgetId, refreshData }) {
+function EditBudget({ budgetId, refreshData, trigger }) {
   const [name, setName] = useState("");
   const [amount, setAmount] = useState("");
-  const [emojiicon, setEmojiicon] = useState("💰");
+  const [emojiIcon, setEmojiIcon] = useState("\u{1F4B0}");
   const [openEmojiPicker, setOpenEmojiPicker] = useState(false);
   const [loading, setLoading] = useState(false);
   const [open, setOpen] = useState(false);
@@ -32,8 +33,8 @@ function EditBudget({ budgetId, refreshData }) {
       });
 
       setName(data?.budget?.name || "");
-      setAmount(data?.budget?.amount || "");
-      setEmojiicon(data?.budget?.icon || "💰");
+      setAmount(String(data?.budget?.amount || ""));
+      setEmojiIcon(data?.budget?.icon || "\u{1F4B0}");
     } catch (error) {
       console.error("Error fetching budget details:", error);
       toast.error(error.message || "Failed to load budget details");
@@ -46,15 +47,18 @@ function EditBudget({ budgetId, refreshData }) {
       await apiRequest(`/api/budgets/${budgetId}`, {
         method: "PATCH",
         body: {
-          name,
-          amount,
-          icon: emojiicon,
+          name: name.trim(),
+          amount: Number(amount),
+          icon: emojiIcon,
         },
       });
 
       toast.success("Budget updated successfully");
-      refreshData && refreshData();
+      if (typeof refreshData === "function") {
+        await refreshData();
+      }
       setOpen(false);
+      setOpenEmojiPicker(false);
     } catch (error) {
       console.error("Error updating budget:", error);
       toast.error(error.message || "Failed to update budget");
@@ -63,6 +67,18 @@ function EditBudget({ budgetId, refreshData }) {
     }
   };
 
+  const defaultTrigger = (
+    <Button
+      className="flex gap-2 rounded-md bg-[#00246B] text-white hover:bg-[#00246B]/90"
+      variant="default"
+    >
+      <PenBox className="h-4 w-4" />
+      Edit
+    </Button>
+  );
+
+  const isFormValid = name.trim() && Number(amount) > 0;
+
   return (
     <Dialog
       open={open}
@@ -70,68 +86,79 @@ function EditBudget({ budgetId, refreshData }) {
         setOpen(isOpen);
         if (isOpen) {
           void getBudgetDetails();
+        } else {
+          setOpenEmojiPicker(false);
         }
       }}
     >
-      <DialogTrigger asChild>
-        <Button className="flex gap-2 bg-[#00246B] text-white hover:bg-[#00246B]/90 rounded-md" variant="default">
-          <PenBox />
-          Edit
-        </Button>
-      </DialogTrigger>
-      <DialogContent>
+      <DialogTrigger asChild>{trigger || defaultTrigger}</DialogTrigger>
+      <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Edit Budget</DialogTitle>
+          <DialogDescription>
+            Update the budget details and keep your spending plan current.
+          </DialogDescription>
+        </DialogHeader>
 
-          <div className="mt-4">
+        <div className="space-y-5">
+          <div className="relative">
             <Button
+              type="button"
               variant="outline"
-              className="text-3xl"
-              onClick={() => setOpenEmojiPicker(!openEmojiPicker)}
+              className="h-14 w-14 rounded-2xl p-0 text-3xl"
+              onClick={() => setOpenEmojiPicker((currentValue) => !currentValue)}
             >
-              {emojiicon}
+              {emojiIcon}
             </Button>
-            <div className="absolute z-20">
-              {openEmojiPicker && (
+            {openEmojiPicker ? (
+              <div className="absolute left-0 top-16 z-20">
                 <EmojiPicker
                   onEmojiClick={(event) => {
-                    setEmojiicon(event.emoji);
+                    setEmojiIcon(event.emoji);
                     setOpenEmojiPicker(false);
                   }}
                 />
-              )}
-            </div>
-            <div className="mt-2">
-              <h2 className="text-black font-medium my-2">Budget Name</h2>
-              <Input
-                placeholder="Budget Name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-              />
-            </div>
-            <div className="mt-2">
-              <h2 className="text-black font-medium my-2">Budget Amount</h2>
-              <Input
-                type="number"
-                placeholder="e.g Rs 5000"
-                value={amount}
-                onChange={(e) => setAmount(Number(e.target.value))}
-              />
-            </div>
+              </div>
+            ) : null}
           </div>
-        </DialogHeader>
-        <DialogFooter className="sm:justify-start">
+
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-foreground">
+              Budget Name
+            </label>
+            <Input
+              placeholder="Budget Name"
+              value={name}
+              onChange={(event) => setName(event.target.value)}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-foreground">
+              Budget Amount
+            </label>
+            <Input
+              type="number"
+              min="1"
+              placeholder="e.g. 5000"
+              value={amount}
+              onChange={(event) => setAmount(event.target.value)}
+            />
+          </div>
+        </div>
+
+        <DialogFooter>
           <Button
-            disabled={!(name && amount) || loading}
+            disabled={!isFormValid || loading}
             onClick={updateBudget}
-            className="mt-5 w-full"
+            className="w-full"
           >
             {loading ? "Updating..." : "Update Budget"}
           </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
-  )
+  );
 }
 
-export default EditBudget
+export default EditBudget;

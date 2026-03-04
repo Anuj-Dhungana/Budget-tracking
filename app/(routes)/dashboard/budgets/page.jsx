@@ -1,12 +1,15 @@
-import React from 'react'
-import Budgetlist from './_components/Budgetlist'
+import React from "react";
+
+import Budgetlist from "./_components/Budgetlist";
+
 function Budget() {
   return (
-    <div className='p-10'>
-      <h2 className='font-bold text-2xl'>My Budgets</h2>
-   <Budgetlist/>
+    <div className="bg-background p-5 md:p-8">
+      <div className="mx-auto max-w-7xl">
+        <Budgetlist />
+      </div>
     </div>
-  )
+  );
 }
 
 export default Budget;

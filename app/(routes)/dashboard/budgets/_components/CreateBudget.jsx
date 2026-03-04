@@ -2,12 +2,14 @@
 
 import React, { useState } from "react";
 import EmojiPicker from "emoji-picker-react";
+import { Plus } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "../../../../../components/ui/button";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
@@ -16,31 +18,37 @@ import {
 import { Input } from "../../../../../components/ui/input";
 import { apiRequest } from "../../../../../lib/api.js";
 
-function CreateBudget({ refershData }) {
-  const [emojiicon, setEmojiicon] = useState("💰");
+function CreateBudget({ refreshData, refershData, trigger }) {
+  const onRefresh = refreshData || refershData;
+  const [emojiIcon, setEmojiIcon] = useState("\u{1F4B0}");
   const [openEmojiPicker, setOpenEmojiPicker] = useState(false);
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [name, setName] = useState("");
   const [amount, setAmount] = useState("");
 
-  const onCreateBudget = async () => {
+  const handleCreateBudget = async () => {
     try {
       setLoading(true);
       await apiRequest("/api/budgets", {
         method: "POST",
         body: {
-          name,
-          amount,
-          icon: emojiicon,
+          name: name.trim(),
+          amount: Number(amount),
+          icon: emojiIcon,
         },
       });
 
       setName("");
       setAmount("");
-      setEmojiicon("💰");
+      setEmojiIcon("\u{1F4B0}");
+      setOpenEmojiPicker(false);
       setOpen(false);
-      refershData();
+
+      if (typeof onRefresh === "function") {
+        await onRefresh();
+      }
+
       toast.success("Budget created successfully");
     } catch (error) {
       toast.error(error.message || "Failed to create budget");
@@ -49,70 +57,92 @@ function CreateBudget({ refershData }) {
     }
   };
 
-  return (
-    <div>
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogTrigger asChild>
-          <div
-            className="bg-slate-100 p-10 rounded-md items-center flex flex-col border-2 border-dashed cursor-pointer hover:shadow-md"
-          >
-            <h2 className="text-3xl font-bold">+</h2>
-            <h2 className="text-2xl font-bold">Create New Budget</h2>
-          </div>
-        </DialogTrigger>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Create New Budget</DialogTitle>
+  const defaultTrigger = (
+    <Button className="gap-2 rounded-xl px-5">
+      <Plus className="h-4 w-4" />
+      Create Budget
+    </Button>
+  );
 
-            <div className="mt-4">
-              <Button
-                variant="outline"
-                className="text-3xl"
-                onClick={() => setOpenEmojiPicker(!openEmojiPicker)}
-              >
-                {emojiicon}
-              </Button>
-              <div className="absolute z-20">
-                {openEmojiPicker && (
-                  <EmojiPicker
-                    onEmojiClick={(event) => {
-                      setEmojiicon(event.emoji);
-                      setOpenEmojiPicker(false);
-                    }}
-                  />
-                )}
-              </div>
-              <div className="mt-2">
-                <h2 className="text-black font-medium my-2">Budget Name</h2>
-                <Input
-                  placeholder="Budget Name"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                />
-              </div>
-              <div className="mt-2">
-                <h2 className="text-black font-medium my-2">Budget Amount</h2>
-                <Input
-                  type="number"
-                  placeholder="e.g. Rs 5000"
-                  value={amount}
-                  onChange={(e) => setAmount(Number(e.target.value))}
-                />
-              </div>
-            </div>
-          </DialogHeader>
-          <DialogFooter className="sm:justify-start">
+  const isFormValid = name.trim() && Number(amount) > 0;
+
+  return (
+    <Dialog
+      open={open}
+      onOpenChange={(isOpen) => {
+        setOpen(isOpen);
+        if (!isOpen) {
+          setOpenEmojiPicker(false);
+        }
+      }}
+    >
+      <DialogTrigger asChild>{trigger || defaultTrigger}</DialogTrigger>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Create Budget</DialogTitle>
+          <DialogDescription>
+            Add a new spending category and start tracking progress.
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="space-y-5">
+          <div className="relative">
             <Button
-              disabled={!(name && amount) || loading}
-              onClick={onCreateBudget}
-              className="mt-5 w-full"
+              type="button"
+              variant="outline"
+              className="h-14 w-14 rounded-2xl p-0 text-3xl"
+              onClick={() => setOpenEmojiPicker((currentValue) => !currentValue)}
             >
-              {loading ? "Creating..." : "Create Budget"}
+              {emojiIcon}
             </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </div>
+            {openEmojiPicker ? (
+              <div className="absolute left-0 top-16 z-20">
+                <EmojiPicker
+                  onEmojiClick={(event) => {
+                    setEmojiIcon(event.emoji);
+                    setOpenEmojiPicker(false);
+                  }}
+                />
+              </div>
+            ) : null}
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-foreground">
+              Budget Name
+            </label>
+            <Input
+              placeholder="Food Budget"
+              value={name}
+              onChange={(event) => setName(event.target.value)}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-foreground">
+              Budget Amount
+            </label>
+            <Input
+              type="number"
+              min="1"
+              placeholder="e.g. 5000"
+              value={amount}
+              onChange={(event) => setAmount(event.target.value)}
+            />
+          </div>
+        </div>
+
+        <DialogFooter>
+          <Button
+            disabled={!isFormValid || loading}
+            onClick={handleCreateBudget}
+            className="w-full"
+          >
+            {loading ? "Creating..." : "Create Budget"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
 
