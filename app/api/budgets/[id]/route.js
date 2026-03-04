@@ -2,7 +2,8 @@ import { NextResponse } from "next/server";
 import { and, desc, eq, getTableColumns, sql } from "drizzle-orm";
 
 import db from "../../../../utils/dbConfig.js";
-import { Budget, Expense } from "../../../../utils/schema.js";
+import { Budget, Expense, RecurringExpense } from "../../../../utils/schema.js";
+import { generateDueRecurringExpenses } from "../../../../lib/recurring-expenses.js";
 import { getAuthenticatedUserEmail } from "../../../../lib/server-auth.js";
 
 function getBudgetId(params) {
@@ -37,6 +38,8 @@ export async function GET(_request, context) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  await generateDueRecurringExpenses({ email });
+
   const params = await Promise.resolve(context.params);
   const budgetId = getBudgetId(params);
 
@@ -57,6 +60,8 @@ export async function GET(_request, context) {
       description: Expense.description,
       budgetId: Expense.budgetId,
       createdAt: Expense.createdAt,
+      source: Expense.source,
+      recurringId: Expense.recurringId,
     })
     .from(Expense)
     .where(eq(Expense.budgetId, budgetId))
@@ -128,6 +133,7 @@ export async function DELETE(_request, context) {
   }
 
   await db.delete(Expense).where(eq(Expense.budgetId, budgetId));
+  await db.delete(RecurringExpense).where(eq(RecurringExpense.budgetId, budgetId));
   await db
     .delete(Budget)
     .where(and(eq(Budget.id, budgetId), eq(Budget.createdBy, email)));

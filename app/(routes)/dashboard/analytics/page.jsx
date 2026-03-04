@@ -7,6 +7,7 @@ import { ChevronRight, Plus } from "lucide-react";
 
 import { Button } from "../../../../components/ui/button";
 import { apiRequest } from "../../../../lib/api.js";
+import { EXPENSES_UPDATED_EVENT } from "../../../../lib/expense-events.js";
 import AnalyticsSummaryCards from "./_components/AnalyticsSummaryCards";
 import BudgetDistributionChart from "./_components/BudgetDistributionChart";
 import SpendingTrendChart from "./_components/SpendingTrendChart";
@@ -28,40 +29,38 @@ function AnalyticsPage() {
   const [loading, setLoading] = useState(true);
   const [selectedRange, setSelectedRange] = useState("month");
 
+  const loadAnalyticsData = async () => {
+    try {
+      setLoading(true);
+      const [budgetData, expenseData] = await Promise.all([
+        apiRequest("/api/budgets", { cache: "no-store" }),
+        apiRequest("/api/expenses", { cache: "no-store" }),
+      ]);
+
+      setBudgets(budgetData?.budgets || []);
+      setExpenses(expenseData?.expenses || []);
+    } catch (error) {
+      console.error("Error fetching analytics data:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
     if (!user) {
       return;
     }
 
-    let cancelled = false;
-
-    const loadAnalyticsData = async () => {
-      try {
-        setLoading(true);
-        const [budgetData, expenseData] = await Promise.all([
-          apiRequest("/api/budgets", { cache: "no-store" }),
-          apiRequest("/api/expenses", { cache: "no-store" }),
-        ]);
-
-        if (cancelled) {
-          return;
-        }
-
-        setBudgets(budgetData?.budgets || []);
-        setExpenses(expenseData?.expenses || []);
-      } catch (error) {
-        console.error("Error fetching analytics data:", error);
-      } finally {
-        if (!cancelled) {
-          setLoading(false);
-        }
-      }
-    };
-
     void loadAnalyticsData();
 
+    const handleExpensesUpdated = () => {
+      void loadAnalyticsData();
+    };
+
+    window.addEventListener(EXPENSES_UPDATED_EVENT, handleExpensesUpdated);
+
     return () => {
-      cancelled = true;
+      window.removeEventListener(EXPENSES_UPDATED_EVENT, handleExpensesUpdated);
     };
   }, [user]);
 

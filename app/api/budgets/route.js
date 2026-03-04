@@ -3,6 +3,7 @@ import { desc, eq, getTableColumns, sql } from "drizzle-orm";
 
 import db from "../../../utils/dbConfig.js";
 import { Budget, Expense } from "../../../utils/schema.js";
+import { generateDueRecurringExpenses } from "../../../lib/recurring-expenses.js";
 import { getAuthenticatedUserEmail } from "../../../lib/server-auth.js";
 
 function getBudgetAmount(value) {
@@ -16,6 +17,8 @@ export async function GET() {
   if (!email) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+
+  await generateDueRecurringExpenses({ email });
 
   const budgets = await db
     .select({

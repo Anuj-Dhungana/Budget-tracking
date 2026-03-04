@@ -7,6 +7,8 @@ import { toast } from "sonner";
 import { Button } from "../../../../../components/ui/button";
 import { Input } from "../../../../../components/ui/input";
 import { apiRequest } from "../../../../../lib/api.js";
+import { dispatchExpensesUpdated } from "../../../../../lib/expense-events.js";
+import RecurringExpenseBadge from "./RecurringExpenseBadge.jsx";
 
 function formatCurrency(amount) {
   return `\u0930\u0941 ${new Intl.NumberFormat("en-NP", {
@@ -52,6 +54,7 @@ function ExpensesListTable({ expensesList, refreshData }) {
       });
 
       toast.success("Expense deleted");
+      dispatchExpensesUpdated();
       if (typeof refreshData === "function") {
         await refreshData();
       }
@@ -127,7 +130,10 @@ function ExpensesListTable({ expensesList, refreshData }) {
                 filteredExpenses.map((expense) => (
                   <tr key={expense.id} className="transition hover:bg-muted/30">
                     <td className="px-4 py-4 text-sm font-medium text-card-foreground">
-                      {expense.description}
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span>{expense.description}</span>
+                        <RecurringExpenseBadge expense={expense} />
+                      </div>
                     </td>
                     <td className="px-4 py-4 text-sm text-card-foreground">
                       {formatCurrency(expense.amount)}

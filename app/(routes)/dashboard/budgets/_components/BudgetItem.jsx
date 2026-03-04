@@ -25,6 +25,8 @@ function getBudgetHealth(progress) {
       barClass: "bg-red-500",
       badgeClass: "bg-red-100 text-red-700 dark:bg-red-950/60 dark:text-red-300",
       iconClass: "bg-red-50 text-red-600 dark:bg-red-950/40 dark:text-red-300",
+      messageClass: "text-red-600 dark:text-red-300",
+      statusLabel: "Critical",
     };
   }
 
@@ -35,6 +37,8 @@ function getBudgetHealth(progress) {
         "bg-amber-100 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300",
       iconClass:
         "bg-amber-50 text-amber-600 dark:bg-amber-950/40 dark:text-amber-300",
+      messageClass: "text-amber-600 dark:text-amber-300",
+      statusLabel: "Warning",
     };
   }
 
@@ -42,7 +46,22 @@ function getBudgetHealth(progress) {
     barClass: "bg-blue-500",
     badgeClass: "bg-blue-100 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300",
     iconClass: "bg-blue-50 text-blue-600 dark:bg-blue-950/40 dark:text-blue-300",
+    messageClass: "text-blue-600 dark:text-blue-300",
+    statusLabel: "Healthy",
   };
+}
+
+function getHealthMessage(progress, remainingAmount, totalBudget) {
+  if (progress >= 90) {
+    return `Only ${formatCurrency(remainingAmount)} remaining`;
+  }
+
+  if (progress >= 70) {
+    return `${formatCurrency(remainingAmount)} left before this budget is full`;
+  }
+
+  const remainingPercent = totalBudget > 0 ? Math.max(100 - Math.round(progress), 0) : 0;
+  return `Good! ${remainingPercent}% budget remaining`;
 }
 
 function BudgetItem({ budget, refreshData }) {
@@ -189,6 +208,10 @@ function BudgetItem({ budget, refreshData }) {
               style={{ width: `${progress}%` }}
             />
           </div>
+
+          <p className={`mt-3 text-sm font-medium ${health.messageClass}`}>
+            {health.statusLabel}: {getHealthMessage(progress, remainingAmount, totalBudget)}
+          </p>
 
           <div className="mt-5 flex items-center justify-between text-sm font-medium text-primary">
             <span>View Details</span>

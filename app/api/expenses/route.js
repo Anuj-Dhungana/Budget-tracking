@@ -3,6 +3,7 @@ import { and, desc, eq, like } from "drizzle-orm";
 
 import db from "../../../utils/dbConfig.js";
 import { Budget, Expense } from "../../../utils/schema.js";
+import { generateDueRecurringExpenses } from "../../../lib/recurring-expenses.js";
 import { getAuthenticatedUserEmail } from "../../../lib/server-auth.js";
 
 function buildWhereClause(conditions) {
@@ -27,12 +28,23 @@ function getBudgetId(value) {
   return Number.isInteger(budgetId) && budgetId > 0 ? budgetId : null;
 }
 
+function getExpenseDate(value) {
+  if (!value) {
+    return new Date();
+  }
+
+  const date = new Date(`${value}T12:00:00`);
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
 export async function GET(request) {
   const email = await getAuthenticatedUserEmail();
 
   if (!email) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+
+  await generateDueRecurringExpenses({ email });
 
   const { searchParams } = new URL(request.url);
   const search = searchParams.get("search")?.trim();
@@ -66,6 +78,8 @@ export async function GET(request) {
       createdAt: Expense.createdAt,
       budgetId: Expense.budgetId,
       budgetName: Budget.name,
+      source: Expense.source,
+      recurringId: Expense.recurringId,
     })
     .from(Expense)
     .innerJoin(Budget, eq(Budget.id, Expense.budgetId))
@@ -90,14 +104,15 @@ export async function POST(request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { name, amount, budgetId } = await request.json();
+  const { name, amount, budgetId, date } = await request.json();
   const trimmedName = name?.trim();
   const parsedAmount = getExpenseAmount(amount);
   const parsedBudgetId = getBudgetId(budgetId);
+  const parsedDate = getExpenseDate(date);
 
-  if (!trimmedName || !parsedAmount || !parsedBudgetId) {
+  if (!trimmedName || !parsedAmount || !parsedBudgetId || !parsedDate) {
     return NextResponse.json(
-      { error: "Expense name, amount, and budget are required" },
+      { error: "Expense name, amount, budget, and date are required" },
       { status: 400 }
     );
   }
@@ -117,8 +132,9 @@ export async function POST(request) {
       description: trimmedName,
       amount: parsedAmount,
       budgetId: parsedBudgetId,
-      createdAt: new Date(),
+      createdAt: parsedDate,
       createdBy: email,
+      source: "MANUAL",
     })
     .returning();
 

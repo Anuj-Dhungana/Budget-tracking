@@ -10,31 +10,54 @@ import BudgetItem from "./BudgetItem.jsx";
 import AddExpenses from "../_components/AddExpenses.jsx";
 import EditBudget from "../_components/EditBudget.jsx";
 import ExpensesListTable from "../_components/ExpensesListTable.jsx";
+import RecurringRulesPanel from "../_components/RecurringRulesPanel.jsx";
 import DeleteBudgetAction from "../../budgets/_components/DeleteBudgetAction.jsx";
 import { Button } from "../../../../../components/ui/button.jsx";
 import { apiRequest } from "../../../../../lib/api.js";
+import { EXPENSES_UPDATED_EVENT } from "../../../../../lib/expense-events.js";
 
 async function loadBudgetData({
   budgetId,
   route,
   setBudgetsInfo,
   setExpensesList,
+  setRecurringRules,
   setLoading,
+  setRulesLoading,
 }) {
   try {
     setLoading(true);
-    const data = await apiRequest(`/api/budgets/${budgetId}`, {
-      cache: "no-store",
-    });
+    setRulesLoading(true);
 
-    setBudgetsInfo(data?.budget || null);
-    setExpensesList(data?.expenses || []);
+    const [budgetResult, rulesResult] = await Promise.allSettled([
+      apiRequest(`/api/budgets/${budgetId}`, {
+        cache: "no-store",
+      }),
+      apiRequest(`/api/recurring?budgetId=${budgetId}`, {
+        cache: "no-store",
+      }),
+    ]);
+
+    if (budgetResult.status !== "fulfilled") {
+      throw budgetResult.reason;
+    }
+
+    setBudgetsInfo(budgetResult.value?.budget || null);
+    setExpensesList(budgetResult.value?.expenses || []);
+
+    if (rulesResult.status === "fulfilled") {
+      setRecurringRules(rulesResult.value?.rules || []);
+    } else {
+      console.error("Error fetching recurring rules:", rulesResult.reason);
+      setRecurringRules([]);
+    }
   } catch (error) {
     console.error("Error fetching budget info:", error);
     toast.error(error.message || "Failed to load budget");
     route.replace("/dashboard/budgets");
   } finally {
     setLoading(false);
+    setRulesLoading(false);
   }
 }
 
@@ -43,7 +66,9 @@ function ExpensesScreen() {
   const budgetId = params?.id;
   const [budgetInfo, setBudgetsInfo] = useState(null);
   const [expensesList, setExpensesList] = useState([]);
+  const [recurringRules, setRecurringRules] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [rulesLoading, setRulesLoading] = useState(true);
   const route = useRouter();
 
   const getBudgetInfo = async () => {
@@ -52,7 +77,9 @@ function ExpensesScreen() {
       route,
       setBudgetsInfo,
       setExpensesList,
+      setRecurringRules,
       setLoading,
+      setRulesLoading,
     });
   };
 
@@ -66,8 +93,28 @@ function ExpensesScreen() {
       route,
       setBudgetsInfo,
       setExpensesList,
+      setRecurringRules,
       setLoading,
+      setRulesLoading,
     });
+
+    const handleExpensesUpdated = () => {
+      void loadBudgetData({
+        budgetId,
+        route,
+        setBudgetsInfo,
+        setExpensesList,
+        setRecurringRules,
+        setLoading,
+        setRulesLoading,
+      });
+    };
+
+    window.addEventListener(EXPENSES_UPDATED_EVENT, handleExpensesUpdated);
+
+    return () => {
+      window.removeEventListener(EXPENSES_UPDATED_EVENT, handleExpensesUpdated);
+    };
   }, [budgetId, route]);
 
   return (
@@ -125,6 +172,15 @@ function ExpensesScreen() {
           ) : budgetInfo ? (
             <BudgetItem budget={budgetInfo} />
           ) : null}
+        </section>
+
+        <section>
+          <RecurringRulesPanel
+            budgetId={budgetId}
+            rules={recurringRules}
+            loading={rulesLoading}
+            refreshData={getBudgetInfo}
+          />
         </section>
 
         <section>

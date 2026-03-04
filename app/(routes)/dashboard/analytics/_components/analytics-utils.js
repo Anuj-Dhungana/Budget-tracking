@@ -360,20 +360,25 @@ export function buildInsights(currentExpenses, allExpenses, budgets, range) {
   const previousTotal = getAnalyticsSummary(previousExpenses).totalSpent;
 
   if (topBudgets[0]) {
-    insights.push(
-      `Your highest spending category is ${topBudgets[0].name}.`
-    );
+    insights.push({
+      title: "Spending Insight",
+      tone: "info",
+      message: `Your highest spending category is ${topBudgets[0].name}.`,
+    });
   }
 
   if (previousTotal > 0 && summary.totalSpent > 0) {
     const difference = ((summary.totalSpent - previousTotal) / previousTotal) * 100;
     const roundedDifference = Math.round(Math.abs(difference));
 
-    insights.push(
-      difference >= 0
-        ? `You spent ${roundedDifference}% more than the previous ${getRangeLabel(range).toLowerCase()}.`
-        : `You spent ${roundedDifference}% less than the previous ${getRangeLabel(range).toLowerCase()}.`
-    );
+    insights.push({
+      title: difference >= 0 ? "Warning" : "Good News",
+      tone: difference >= 0 ? "warning" : "success",
+      message:
+        difference >= 0
+          ? `You spent ${roundedDifference}% more than the previous ${getRangeLabel(range).toLowerCase()}.`
+          : `You spent ${roundedDifference}% less than the previous ${getRangeLabel(range).toLowerCase()}.`,
+    });
   }
 
   const lightlyUsedBudget = topBudgets
@@ -381,9 +386,24 @@ export function buildInsights(currentExpenses, allExpenses, budgets, range) {
     .sort((left, right) => left.progress - right.progress)[0];
 
   if (lightlyUsedBudget) {
-    insights.push(
-      `${lightlyUsedBudget.name} is only ${Math.round(lightlyUsedBudget.progress)}% used.`
-    );
+    insights.push({
+      title: "Budget Health",
+      tone: "success",
+      message: `${lightlyUsedBudget.name} still has ${Math.max(
+        100 - Math.round(lightlyUsedBudget.progress),
+        0
+      )}% remaining.`,
+    });
+  }
+
+  const criticalBudget = topBudgets.find((budget) => budget.progress >= 80);
+
+  if (criticalBudget) {
+    insights.push({
+      title: "Warning",
+      tone: "warning",
+      message: `${criticalBudget.name} is ${Math.round(criticalBudget.progress)}% used.`,
+    });
   }
 
   return insights.slice(0, 3);

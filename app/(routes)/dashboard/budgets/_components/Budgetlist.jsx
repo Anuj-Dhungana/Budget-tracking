@@ -6,6 +6,7 @@ import { Plus } from "lucide-react";
 
 import { Button } from "../../../../../components/ui/button";
 import { apiRequest } from "../../../../../lib/api.js";
+import { EXPENSES_UPDATED_EVENT } from "../../../../../lib/expense-events.js";
 import BudgetItem from "./BudgetItem";
 import CreateBudget from "./CreateBudget";
 
@@ -35,6 +36,16 @@ function Budgetlist() {
     }
 
     void getBudgetList();
+
+    const handleExpensesUpdated = () => {
+      void getBudgetList();
+    };
+
+    window.addEventListener(EXPENSES_UPDATED_EVENT, handleExpensesUpdated);
+
+    return () => {
+      window.removeEventListener(EXPENSES_UPDATED_EVENT, handleExpensesUpdated);
+    };
   }, [user]);
 
   return (

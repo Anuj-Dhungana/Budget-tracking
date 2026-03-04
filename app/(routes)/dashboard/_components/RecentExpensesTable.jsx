@@ -7,6 +7,8 @@ import { toast } from "sonner";
 
 import { Button } from "../../../../components/ui/button";
 import { apiRequest } from "../../../../lib/api.js";
+import { dispatchExpensesUpdated } from "../../../../lib/expense-events.js";
+import RecurringExpenseBadge from "../expenses/_components/RecurringExpenseBadge.jsx";
 
 function formatCurrency(amount) {
   return `\u0930\u0941 ${new Intl.NumberFormat("en-NP", {
@@ -40,6 +42,7 @@ function RecentExpensesTable({ expenses = [], loading = false, refreshData }) {
       });
 
       toast.success("Expense deleted");
+      dispatchExpensesUpdated();
       if (typeof refreshData === "function") {
         refreshData();
       }
@@ -94,7 +97,12 @@ function RecentExpensesTable({ expenses = [], loading = false, refreshData }) {
                       <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground md:hidden">
                         Description
                       </p>
-                      <p className="font-medium text-card-foreground">{expense.description}</p>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <p className="font-medium text-card-foreground">
+                          {expense.description}
+                        </p>
+                        <RecurringExpenseBadge expense={expense} />
+                      </div>
                     </div>
                     <div>
                       <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground md:hidden">

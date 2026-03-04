@@ -3,6 +3,7 @@ import { desc, eq, getTableColumns, sql } from "drizzle-orm";
 
 import db from "../../../utils/dbConfig.js";
 import { Budget, Expense } from "../../../utils/schema.js";
+import { generateDueRecurringExpenses } from "../../../lib/recurring-expenses.js";
 import { getAuthenticatedUserEmail } from "../../../lib/server-auth.js";
 
 export async function GET() {
@@ -11,6 +12,8 @@ export async function GET() {
   if (!email) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+
+  await generateDueRecurringExpenses({ email });
 
   const budgets = await db
     .select({
@@ -32,6 +35,8 @@ export async function GET() {
       createdAt: Expense.createdAt,
       budgetId: Expense.budgetId,
       budgetName: Budget.name,
+      source: Expense.source,
+      recurringId: Expense.recurringId,
     })
     .from(Expense)
     .innerJoin(Budget, eq(Budget.id, Expense.budgetId))

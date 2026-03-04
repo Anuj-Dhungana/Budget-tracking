@@ -7,6 +7,7 @@ import { useUser } from "@clerk/nextjs";
 
 import { Button } from "../../../components/ui/button";
 import { apiRequest } from "../../../lib/api.js";
+import { EXPENSES_UPDATED_EVENT } from "../../../lib/expense-events.js";
 import BarChartDashboard from "./_components/BarChartDashboard";
 import BudgetOverview from "./_components/BudgetOverview.jsx";
 import Cardinfo from "./_components/Cardinfo";
@@ -40,6 +41,16 @@ function Dashboard() {
     }
 
     void getDashboardData();
+
+    const handleExpensesUpdated = () => {
+      void getDashboardData();
+    };
+
+    window.addEventListener(EXPENSES_UPDATED_EVENT, handleExpensesUpdated);
+
+    return () => {
+      window.removeEventListener(EXPENSES_UPDATED_EVENT, handleExpensesUpdated);
+    };
   }, [user]);
 
   const showEmptyState = !loading && budgetList.length === 0;

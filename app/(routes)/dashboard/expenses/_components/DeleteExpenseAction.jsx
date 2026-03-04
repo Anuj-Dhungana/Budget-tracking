@@ -17,6 +17,7 @@ import {
 } from "../../../../../components/ui/alert-dialog.jsx";
 import { Button } from "../../../../../components/ui/button.jsx";
 import { apiRequest } from "../../../../../lib/api.js";
+import { dispatchExpensesUpdated } from "../../../../../lib/expense-events.js";
 
 function DeleteExpenseAction({ expenseId, onDeleted, trigger }) {
   const handleDelete = async () => {
@@ -26,6 +27,7 @@ function DeleteExpenseAction({ expenseId, onDeleted, trigger }) {
       });
 
       toast.success("Expense deleted");
+      dispatchExpensesUpdated();
       if (typeof onDeleted === "function") {
         await onDeleted();
       }

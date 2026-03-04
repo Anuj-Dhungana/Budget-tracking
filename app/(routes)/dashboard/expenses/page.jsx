@@ -7,8 +7,10 @@ import { Search } from "lucide-react";
 import { Button } from "../../../../components/ui/button";
 import { Input } from "../../../../components/ui/input";
 import { apiRequest } from "../../../../lib/api.js";
+import { EXPENSES_UPDATED_EVENT } from "../../../../lib/expense-events.js";
 import DeleteExpenseAction from "./_components/DeleteExpenseAction.jsx";
 import ExpenseFormDialog from "./_components/ExpenseFormDialog.jsx";
+import RecurringExpenseBadge from "./_components/RecurringExpenseBadge.jsx";
 import {
   DATE_FILTER_OPTIONS,
   formatCurrency,
@@ -66,6 +68,16 @@ function ExpensesPage() {
     }
 
     void loadPageData();
+
+    const handleExpensesUpdated = () => {
+      void loadPageData();
+    };
+
+    window.addEventListener(EXPENSES_UPDATED_EVENT, handleExpensesUpdated);
+
+    return () => {
+      window.removeEventListener(EXPENSES_UPDATED_EVENT, handleExpensesUpdated);
+    };
   }, [user]);
 
   const normalizedQuery = searchTerm.trim().toLowerCase();
@@ -242,7 +254,10 @@ function ExpensesPage() {
                     filteredExpenses.map((expense) => (
                       <tr key={expense.id} className="transition hover:bg-muted/30">
                         <td className="px-4 py-4 text-sm font-medium text-card-foreground">
-                          {expense.description}
+                          <div className="flex flex-wrap items-center gap-2">
+                            <span>{expense.description}</span>
+                            <RecurringExpenseBadge expense={expense} />
+                          </div>
                         </td>
                         <td className="px-4 py-4 text-sm text-muted-foreground">
                           {expense.budgetName || "Unassigned"}

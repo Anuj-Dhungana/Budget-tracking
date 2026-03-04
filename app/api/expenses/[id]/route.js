@@ -20,6 +20,15 @@ function getBudgetId(value) {
   return Number.isInteger(budgetId) && budgetId > 0 ? budgetId : null;
 }
 
+function getExpenseDate(value) {
+  if (!value) {
+    return null;
+  }
+
+  const date = new Date(`${value}T12:00:00`);
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
 async function getOwnedExpense(email, expenseId) {
   const [expense] = await db
     .select({
@@ -47,14 +56,15 @@ export async function PATCH(request, context) {
     return NextResponse.json({ error: "Invalid expense id" }, { status: 400 });
   }
 
-  const { name, amount, budgetId } = await request.json();
+  const { name, amount, budgetId, date } = await request.json();
   const trimmedName = name?.trim();
   const parsedAmount = getExpenseAmount(amount);
   const parsedBudgetId = getBudgetId(budgetId);
+  const parsedDate = getExpenseDate(date);
 
-  if (!trimmedName || !parsedAmount || !parsedBudgetId) {
+  if (!trimmedName || !parsedAmount || !parsedBudgetId || !parsedDate) {
     return NextResponse.json(
-      { error: "Expense name, amount, and budget are required" },
+      { error: "Expense name, amount, budget, and date are required" },
       { status: 400 }
     );
   }
@@ -80,6 +90,7 @@ export async function PATCH(request, context) {
       description: trimmedName,
       amount: parsedAmount,
       budgetId: parsedBudgetId,
+      createdAt: parsedDate,
     })
     .where(eq(Expense.id, expenseId))
     .returning();

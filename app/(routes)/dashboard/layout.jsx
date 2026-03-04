@@ -8,6 +8,7 @@ import {
   DialogTitle,
 } from "../../../components/ui/dialog";
 import DashboardHeader from "./_components/DashboardHeader";
+import FloatingExpenseButton from "./_components/FloatingExpenseButton";
 import SideNav from "./_components/SideNav";
 
 function Dashboardlayout({ children }) {
@@ -48,6 +49,7 @@ function Dashboardlayout({ children }) {
       >
         <DashboardHeader onOpenMobileNav={() => setIsMobileSidebarOpen(true)} />
         {children}
+        <FloatingExpenseButton />
       </div>
     </div>
   );
