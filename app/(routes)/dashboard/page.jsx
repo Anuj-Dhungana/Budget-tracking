@@ -17,6 +17,7 @@ function Dashboard() {
   const [budgetList, setBudgetList] = useState([]);
   const [expensesList, setExpensesList] = useState([]);
   const [loading, setLoading] = useState(true);
+
   const getDashboardData = async () => {
     try {
       setLoading(true);
@@ -44,18 +45,18 @@ function Dashboard() {
   const showEmptyState = !loading && budgetList.length === 0;
 
   return (
-    <div className="bg-slate-50/80 p-5 md:p-8">
+    <div className="bg-background p-5 md:p-8">
       <div className="mx-auto max-w-7xl space-y-8">
         {showEmptyState ? (
-          <section className="rounded-[28px] border border-dashed border-slate-300 bg-white p-10 text-center shadow-sm">
+          <section className="rounded-[28px] border border-dashed border-border bg-card p-10 text-center shadow-sm">
             <div className="mx-auto max-w-xl">
-              <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-slate-100 text-3xl">
+              <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-muted text-3xl">
                 {"\u{1F4BC}"}
               </div>
-              <h2 className="mt-6 text-2xl font-semibold text-slate-950">
+              <h2 className="mt-6 text-2xl font-semibold text-card-foreground">
                 You haven&apos;t created any budgets yet.
               </h2>
-              <p className="mt-3 text-sm leading-6 text-slate-500 md:text-base">
+              <p className="mt-3 text-sm leading-6 text-muted-foreground md:text-base">
                 Create your first budget to start tracking expenses and unlock your dashboard insights.
               </p>
               <div className="mt-6 flex flex-col items-center justify-center gap-3 sm:flex-row">

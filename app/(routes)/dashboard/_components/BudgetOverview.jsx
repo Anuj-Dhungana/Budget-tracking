@@ -5,7 +5,7 @@ import { ArrowRight } from "lucide-react";
 const MAX_VISIBLE_BUDGETS = 3;
 
 function formatCurrency(amount) {
-  return `रु ${new Intl.NumberFormat("en-NP", {
+  return `\u0930\u0941 ${new Intl.NumberFormat("en-NP", {
     maximumFractionDigits: 0,
   }).format(amount || 0)}`;
 }
@@ -14,11 +14,11 @@ function BudgetOverview({ budgets = [], loading = false }) {
   const visibleBudgets = budgets.slice(0, MAX_VISIBLE_BUDGETS);
 
   return (
-    <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+    <div className="rounded-3xl border border-border bg-card p-6 shadow-sm">
       <div className="flex items-center justify-between gap-4">
         <div>
-          <h2 className="text-xl font-semibold text-slate-900">Budget Overview</h2>
-          <p className="mt-1 text-sm text-slate-500">
+          <h2 className="text-xl font-semibold text-card-foreground">Budget Overview</h2>
+          <p className="mt-1 text-sm text-muted-foreground">
             Your latest 3 budgets at a glance.
           </p>
         </div>
@@ -36,7 +36,7 @@ function BudgetOverview({ budgets = [], loading = false }) {
           ? [1, 2, 3].map((item) => (
               <div
                 key={item}
-                className="h-[88px] animate-pulse rounded-2xl bg-slate-100"
+                className="h-[88px] animate-pulse rounded-2xl bg-muted"
               />
             ))
           : visibleBudgets.map((budget) => {
@@ -48,25 +48,25 @@ function BudgetOverview({ budgets = [], loading = false }) {
                 <Link
                   key={budget.id}
                   href={`/dashboard/expenses/${budget.id}`}
-                  className="block rounded-2xl border border-slate-200 p-4 transition hover:border-primary/30 hover:bg-slate-50"
+                  className="block rounded-2xl border border-border p-4 transition hover:border-primary/30 hover:bg-muted/60"
                 >
                   <div className="flex items-center justify-between gap-4">
                     <div className="flex items-center gap-3">
-                      <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-slate-100 text-xl">
+                      <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-muted text-xl">
                         {budget.icon || "💼"}
                       </div>
                       <div>
-                        <h3 className="font-medium text-slate-900">{budget.name}</h3>
-                        <p className="text-sm text-slate-500">
+                        <h3 className="font-medium text-card-foreground">{budget.name}</h3>
+                        <p className="text-sm text-muted-foreground">
                           {formatCurrency(totalSpend)} / {formatCurrency(amount)} used
                         </p>
                       </div>
                     </div>
-                    <span className="text-sm font-medium text-slate-500">
+                    <span className="text-sm font-medium text-muted-foreground">
                       {Math.round(progress)}%
                     </span>
                   </div>
-                  <div className="mt-4 h-2 overflow-hidden rounded-full bg-slate-100">
+                  <div className="mt-4 h-2 overflow-hidden rounded-full bg-muted">
                     <div
                       className="h-full rounded-full bg-primary"
                       style={{ width: `${progress}%` }}

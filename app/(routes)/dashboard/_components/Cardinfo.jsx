@@ -2,18 +2,18 @@ import { CreditCard, Folder, TrendingDown, Wallet } from "lucide-react";
 import React from "react";
 
 function formatCurrency(amount) {
-  return `रु ${new Intl.NumberFormat("en-NP", {
+  return `\u0930\u0941 ${new Intl.NumberFormat("en-NP", {
     maximumFractionDigits: 0,
   }).format(amount || 0)}`;
 }
 
 function SummaryCard({ title, value, icon: Icon, accentClass }) {
   return (
-    <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+    <div className="rounded-3xl border border-border bg-card p-5 shadow-sm">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <p className="text-sm font-medium text-slate-500">{title}</p>
-          <h3 className="mt-3 text-3xl font-semibold tracking-tight text-slate-900">
+          <p className="text-sm font-medium text-muted-foreground">{title}</p>
+          <h3 className="mt-3 text-3xl font-semibold tracking-tight text-card-foreground">
             {value}
           </h3>
         </div>
@@ -27,8 +27,8 @@ function SummaryCard({ title, value, icon: Icon, accentClass }) {
 
 function SummaryCardSkeleton() {
   return (
-    <div className="h-[156px] rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
-      <div className="h-full animate-pulse rounded-2xl bg-slate-100" />
+    <div className="h-[156px] rounded-3xl border border-border bg-card p-5 shadow-sm">
+      <div className="h-full animate-pulse rounded-2xl bg-muted" />
     </div>
   );
 }
@@ -48,25 +48,25 @@ function Cardinfo({ budgetList = [], loading = false }) {
       title: "Total Budget",
       value: formatCurrency(totalBudget),
       icon: Wallet,
-      accentClass: "bg-emerald-50 text-emerald-700",
+      accentClass: "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300",
     },
     {
       title: "Total Spent",
       value: formatCurrency(totalSpend),
       icon: CreditCard,
-      accentClass: "bg-blue-50 text-blue-700",
+      accentClass: "bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300",
     },
     {
       title: "Remaining Balance",
       value: formatCurrency(remainingBalance),
       icon: TrendingDown,
-      accentClass: "bg-amber-50 text-amber-700",
+      accentClass: "bg-amber-50 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300",
     },
     {
       title: "Budgets",
       value: `${budgetList.length}`,
       icon: Folder,
-      accentClass: "bg-violet-50 text-violet-700",
+      accentClass: "bg-violet-50 text-violet-700 dark:bg-violet-950/60 dark:text-violet-300",
     },
   ];
 

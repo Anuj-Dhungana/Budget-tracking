@@ -1,6 +1,7 @@
 import localFont from "next/font/local";
 import "./globals.css";
 import { ClerkProvider } from "@clerk/nextjs";
+import { ThemeProvider } from "../components/theme-provider";
 import { Toaster } from "../components/ui/sonner";
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
@@ -25,7 +26,7 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <ClerkProvider>
-      <html lang="en">
+      <html lang="en" suppressHydrationWarning>
         <head>
           <link rel="icon" href="/logo.svg" />
         </head>
@@ -33,8 +34,16 @@ export default function RootLayout({ children }) {
           suppressHydrationWarning
           className={`${geistSans.variable} ${geistMono.variable} antialiased`}
         >
-          <Toaster />
-          {children}
+          <ThemeProvider
+            attribute="class"
+            defaultTheme="light"
+            enableSystem={false}
+            disableTransitionOnChange
+            storageKey="budget-tracker-theme"
+          >
+            <Toaster />
+            {children}
+          </ThemeProvider>
         </body>
       </html>
     </ClerkProvider>
