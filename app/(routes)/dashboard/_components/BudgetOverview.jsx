@@ -2,16 +2,16 @@ import Link from "next/link";
 import React from "react";
 import { ArrowRight } from "lucide-react";
 
+const MAX_VISIBLE_BUDGETS = 3;
+
 function formatCurrency(amount) {
-  return new Intl.NumberFormat("en-IN", {
-    style: "currency",
-    currency: "INR",
+  return `रु ${new Intl.NumberFormat("en-NP", {
     maximumFractionDigits: 0,
-  }).format(amount || 0);
+  }).format(amount || 0)}`;
 }
 
 function BudgetOverview({ budgets = [], loading = false }) {
-  const visibleBudgets = budgets.slice(0, 4);
+  const visibleBudgets = budgets.slice(0, MAX_VISIBLE_BUDGETS);
 
   return (
     <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
@@ -19,7 +19,7 @@ function BudgetOverview({ budgets = [], loading = false }) {
         <div>
           <h2 className="text-xl font-semibold text-slate-900">Budget Overview</h2>
           <p className="mt-1 text-sm text-slate-500">
-            Review the budgets that need your attention most.
+            Your latest 3 budgets at a glance.
           </p>
         </div>
         <Link
@@ -33,7 +33,7 @@ function BudgetOverview({ budgets = [], loading = false }) {
 
       <div className="mt-6 space-y-4">
         {loading
-          ? [1, 2, 3, 4].map((item) => (
+          ? [1, 2, 3].map((item) => (
               <div
                 key={item}
                 className="h-[88px] animate-pulse rounded-2xl bg-slate-100"
@@ -77,7 +77,7 @@ function BudgetOverview({ budgets = [], loading = false }) {
             })}
       </div>
 
-      {!loading && budgets.length > 4 ? (
+      {!loading && budgets.length > MAX_VISIBLE_BUDGETS ? (
         <Link
           href="/dashboard/budgets"
           className="mt-5 inline-flex items-center gap-1 text-sm font-medium text-primary sm:hidden"

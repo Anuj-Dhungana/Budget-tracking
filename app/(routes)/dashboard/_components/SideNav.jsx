@@ -1,12 +1,19 @@
 "use client"
 import React from "react";
 import Image from "next/image";
-import { LayoutGrid, PiggyBank, ReceiptText, ShieldCheck } from "lucide-react";
+import {
+  ChevronLeft,
+  ChevronRight,
+  LayoutGrid,
+  PiggyBank,
+  ReceiptText,
+  ShieldCheck,
+} from "lucide-react";
 import { UserButton } from "@clerk/nextjs";
 import { usePathname } from "next/navigation";
-import { useEffect } from "react";
 import Link from "next/link";
-function SideNav() {
+
+function SideNav({ isCollapsed, onToggle }) {
   const menuList = [
     {
       id: 1,
@@ -34,36 +41,68 @@ function SideNav() {
     },
   ]
     const path=usePathname();
-    console.log(path);
 
-    useEffect(()=>{
-        console.log(path);
-    },[path]);
   return (
-    <div className="h-screen p-5 border shadow-sm">
-      <Image src={"/logo.svg"} alt="logo" width={100} height={100} />
+    <div
+      className={`flex h-screen flex-col border-r border-slate-200 bg-white px-4 py-5 shadow-sm transition-all duration-300 ${
+        isCollapsed ? "items-center" : ""
+      }`}
+    >
+      <div className={`flex w-full items-center ${isCollapsed ? "justify-center" : "justify-between"}`}>
+        <Link href="/" className={`flex items-center ${isCollapsed ? "justify-center" : "gap-3"}`}>
+          <Image src={"/logo.svg"} alt="logo" width={40} height={40} />
+          {!isCollapsed ? (
+            <div>
+              <p className="text-sm font-semibold text-slate-900">BudgetFlow</p>
+              <p className="text-xs text-slate-500">Control your spending</p>
+            </div>
+          ) : null}
+        </Link>
+        <button
+          type="button"
+          onClick={onToggle}
+          className={`hidden rounded-xl border border-slate-200 bg-white p-2 text-slate-600 transition hover:border-primary/30 hover:text-primary md:inline-flex ${
+            isCollapsed ? "absolute -right-4 top-6" : ""
+          }`}
+          aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+          title={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+        >
+          {isCollapsed ? (
+            <ChevronRight className="h-4 w-4" />
+          ) : (
+            <ChevronLeft className="h-4 w-4" />
+          )}
+        </button>
+      </div>
       
-      <div className="mt-5">
-        {menuList.map((menu, index) => (
+      <div className="mt-8 flex w-full flex-1 flex-col">
+        {menuList.map((menu) => (
           <Link href={menu.path} key={menu.id} >
-          <h2
-            className={`flex items-center gap-2
-                text-gray-500 font-medium
-                mb-2
-                p-5 cursor-pointer rounded-md
-                hover:text-primary hover:bg-primary/10
-                ${path==menu.path&&"text-primary bg-primary/10"}`}>
-            <menu.icon />
-            {menu.name}
-          </h2>
+          <div
+            className={`mb-2 flex items-center rounded-2xl px-4 py-3 text-sm font-medium text-slate-500 transition hover:bg-primary/10 hover:text-primary ${
+              path==menu.path ? "bg-primary/10 text-primary" : ""
+            } ${isCollapsed ? "justify-center" : "gap-3"}`}
+            title={isCollapsed ? menu.name : undefined}
+          >
+            <menu.icon className="h-5 w-5 shrink-0" />
+            {!isCollapsed ? <span>{menu.name}</span> : null}
+          </div>
           </Link>
         ))}
       </div>
-      <div className="fixed bottom-10 p-5 flex gap-2
-      items-center 
-      "> 
+
+      <div
+        className={`mt-auto flex w-full items-center rounded-2xl border border-slate-200 bg-slate-50 p-3 ${
+          isCollapsed ? "justify-center" : "gap-3"
+        }`}
+      > 
         <UserButton/>
-        Profile
+        {!isCollapsed ? (
+          <div>
+            <p className="text-sm font-medium text-slate-900">Profile</p>
+            <p className="text-xs text-slate-500">Manage account</p>
+          </div>
+        ) : null}
       </div>
     </div>
   );

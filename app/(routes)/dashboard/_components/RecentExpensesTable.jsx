@@ -9,11 +9,9 @@ import { Button } from "../../../../components/ui/button";
 import { apiRequest } from "../../../../lib/api.js";
 
 function formatCurrency(amount) {
-  return new Intl.NumberFormat("en-IN", {
-    style: "currency",
-    currency: "INR",
+  return `रु ${new Intl.NumberFormat("en-NP", {
     maximumFractionDigits: 0,
-  }).format(amount || 0);
+  }).format(amount || 0)}`;
 }
 
 function formatDate(dateString) {

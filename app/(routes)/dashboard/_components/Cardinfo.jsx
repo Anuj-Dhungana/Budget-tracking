@@ -2,14 +2,12 @@ import { CreditCard, Folder, TrendingDown, Wallet } from "lucide-react";
 import React from "react";
 
 function formatCurrency(amount) {
-  return new Intl.NumberFormat("en-IN", {
-    style: "currency",
-    currency: "INR",
+  return `रु ${new Intl.NumberFormat("en-NP", {
     maximumFractionDigits: 0,
-  }).format(amount || 0);
+  }).format(amount || 0)}`;
 }
 
-function SummaryCard({ title, value, description, icon: Icon, accentClass }) {
+function SummaryCard({ title, value, icon: Icon, accentClass }) {
   return (
     <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
       <div className="flex items-start justify-between gap-4">
@@ -18,7 +16,6 @@ function SummaryCard({ title, value, description, icon: Icon, accentClass }) {
           <h3 className="mt-3 text-3xl font-semibold tracking-tight text-slate-900">
             {value}
           </h3>
-          <p className="mt-2 text-sm text-slate-500">{description}</p>
         </div>
         <div className={`rounded-2xl p-3 ${accentClass}`}>
           <Icon className="h-5 w-5" />
@@ -50,28 +47,24 @@ function Cardinfo({ budgetList = [], loading = false }) {
     {
       title: "Total Budget",
       value: formatCurrency(totalBudget),
-      description: "Planned across all your active budgets.",
       icon: Wallet,
       accentClass: "bg-emerald-50 text-emerald-700",
     },
     {
       title: "Total Spent",
       value: formatCurrency(totalSpend),
-      description: "Money already used from your budgets.",
       icon: CreditCard,
       accentClass: "bg-blue-50 text-blue-700",
     },
     {
       title: "Remaining Balance",
       value: formatCurrency(remainingBalance),
-      description: "What you still have available to spend.",
       icon: TrendingDown,
       accentClass: "bg-amber-50 text-amber-700",
     },
     {
       title: "Budgets",
       value: `${budgetList.length}`,
-      description: `${budgetList.length} active budget${budgetList.length === 1 ? "" : "s"}.`,
       icon: Folder,
       accentClass: "bg-violet-50 text-violet-700",
     },

@@ -13,11 +13,9 @@ import {
 } from 'recharts'
 
 function formatCurrency(amount) {
-  return new Intl.NumberFormat("en-IN", {
-    style: "currency",
-    currency: "INR",
+  return `रु ${new Intl.NumberFormat("en-NP", {
     maximumFractionDigits: 0,
-  }).format(amount || 0);
+  }).format(amount || 0)}`;
 }
 
 function TooltipContent({ active, payload, label }) {
@@ -67,7 +65,7 @@ function BarChartDashboard({ budgetList, loading = false }) {
               tick={{ fill: "#64748b", fontSize: 12 }}
             />
             <YAxis
-              tickFormatter={(value) => `₹${Number(value) / 1000}k`}
+              tickFormatter={(value) => `रु ${Number(value) / 1000}k`}
               tickLine={false}
               axisLine={false}
               tick={{ fill: "#64748b", fontSize: 12 }}
