@@ -1,45 +1,11 @@
 "use client";
 
-import React, { useEffect } from "react";
-import { useUser } from "@clerk/nextjs";
-import { useRouter } from "next/navigation";
+import React from "react";
 
-import { apiRequest } from "../../../lib/api.js";
 import DashboardHeader from "./_components/DashboardHeader";
 import SideNav from "./_components/SideNav";
 
 function Dashboardlayout({ children }) {
-  const { user } = useUser();
-  const router = useRouter();
-
-  useEffect(() => {
-    if (!user) {
-      return;
-    }
-
-    let cancelled = false;
-
-    const checkUserBudgets = async () => {
-      try {
-        const data = await apiRequest("/api/budgets", {
-          cache: "no-store",
-        });
-
-        if (!cancelled && (data?.budgets || []).length === 0) {
-          router.replace("/dashboard/budgets");
-        }
-      } catch (error) {
-        console.error("Error checking budgets:", error);
-      }
-    };
-
-    void checkUserBudgets();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [user, router]);
-
   return (
     <div>
       <div className="fixed hidden md:block md:w-64">

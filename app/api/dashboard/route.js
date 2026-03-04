@@ -31,6 +31,7 @@ export async function GET() {
       amount: Expense.amount,
       createdAt: Expense.createdAt,
       budgetId: Expense.budgetId,
+      budgetName: Budget.name,
     })
     .from(Expense)
     .innerJoin(Budget, eq(Budget.id, Expense.budgetId))
